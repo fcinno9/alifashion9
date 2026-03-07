@@ -60,10 +60,6 @@ function setPdPrice(targetSku, todayKey, price) {
 
   targetSku.pd[todayKey] = { s: safePrice };
 
-  console.log("targetSku.pd[todayKey]", targetSku.pd);
-  console.log("targetSku.pd[todayKey]", todayKey);
-  console.log("targetSku.pd[todayKey]", safePrice);
-
   const istargetSku = targetSku.pd[todayKey] ? true : false;
 
   return istargetSku;
