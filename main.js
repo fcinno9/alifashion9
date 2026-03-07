@@ -24,74 +24,12 @@ import {
 } from "./utils/normalize.js";
 import { withRetry } from "./utils/withRetry.js";
 import { fetchByCategory } from "./utils/fetchByCategory.js";
+import { computePriceFields } from "./utils/computePriceFields.js";
 
 const SYNONYM_KEY_MAP = { 색깔: "색상" };
 
 const limit = pLimit(10); // 동시에 10개만 실행
 
-const categoryList = [
-  { categoryName: "이슬람 패션", vol: 1000 },
-  { categoryName: "주얼리 및 엑세서리", vol: 2000 },
-  { categoryName: "머리 연장 & 가발", vol: 2000 },
-  { categoryName: "회계 용품", vol: 3000 },
-  { categoryName: "클래식 장난감", vol: 1000 },
-  { categoryName: "당신의 순서에 추가 급여", vol: 1000000000 },
-  { categoryName: "조명", vol: 300 },
-  { categoryName: "전원 도구 부품 및 액세서리", vol: 1000 },
-  { categoryName: "네일아트 & 도구", vol: 3000 },
-  { categoryName: "남성 시계", vol: 3000 },
-  { categoryName: "웨딩 및 이벤트", vol: 1000 },
-  { categoryName: "활성 구성 요소", vol: 1000 },
-  { categoryName: "워키 토키 액세서리 및 부품", vol: 2000 },
-  { categoryName: "도구 세트", vol: 1000 },
-  { categoryName: "아기 기념품", vol: 10000 },
-  { categoryName: "내장 부품", vol: 1000 },
-  { categoryName: "전자 장난감", vol: 1500 },
-  { categoryName: "참신하고 웃긴 장난감", vol: 1500 },
-  { categoryName: "패션 주얼리", vol: 10000 },
-  { categoryName: "회화 용품", vol: 1000 },
-  { categoryName: "무대 & 댄스 의상", vol: 5000 },
-  { categoryName: "헤어 액세서리", vol: 1000 },
-  { categoryName: "욕실용품", vol: 500 },
-  { categoryName: "자동차 전자 제품", vol: 100 },
-  { categoryName: "외장 부품", vol: 1000 },
-  { categoryName: "신에너지 차량 부품 및 액세서리", vol: 2000 },
-  { categoryName: "뷰티 & 헬스", vol: 500 },
-  { categoryName: "작업장 안전 용품", vol: 1000 },
-  { categoryName: "어머니 & 아이", vol: 2000 },
-  { categoryName: "가전제품 부품", vol: 300 },
-  { categoryName: "수공예품 및 바느질", vol: 1000 },
-  { categoryName: "박제 동물 & 견면 벨벳", vol: 1000 },
-  { categoryName: "코스프레 액세서리", vol: 1000 },
-  { categoryName: "가족 지능 시스템", vol: 1000 },
-  { categoryName: "펜, 연필 & 쓰기 공급", vol: 1000 },
-  { categoryName: "수공구", vol: 1000 },
-  { categoryName: "플레이 차량 및 모델", vol: 1000 },
-  { categoryName: "배관", vol: 1000 },
-  { categoryName: "문, 창문", vol: 1000 },
-  { categoryName: "오토바이 장비 및 부품", vol: 5000 },
-  { categoryName: "가방 부속품", vol: 2000 },
-  { categoryName: "DIY 액세서리", vol: 1000 },
-  { categoryName: "기타 차량 부품 및 액세서리", vol: 3000 },
-  { categoryName: "출입 통제", vol: 3000 },
-  { categoryName: "정원 도구", vol: 2000 },
-  { categoryName: "보안 경보", vol: 1000 },
-  { categoryName: "메이크업", vol: 1000 },
-  { categoryName: "세차 및 유지 관리", vol: 1000 },
-  { categoryName: "소모품", vol: 400 },
-  { categoryName: "연마 도구 및 연마재", vol: 400 },
-  { categoryName: "축제 & 파티 용품", vol: 400 },
-  { categoryName: "학습 및 교육", vol: 400 },
-  { categoryName: "자동차 조명", vol: 3000 },
-  { categoryName: "자동차 유지 관리 도구", vol: 750 },
-  { categoryName: "자동차 수리 도구", vol: 750 },
-  { categoryName: "드릴 비트, 톱날 및 절단 도구", vol: 500 },
-  { categoryName: "정원 용품", vol: 350 },
-  { categoryName: "산업 및 비즈니스", vol: 2000 },
-  { categoryName: "엔진 및 엔진 부품", vol: 1000 },
-  { categoryName: "용접 장비 및 소모품", vol: 1000 },
-  { categoryName: "낚시", vol: 400 },
-];
 // ─────────────────────────────────────────────────────────────────────────────
 //  실패 무해 try/catch, 배열 정규화
 
@@ -111,6 +49,25 @@ const tryCatch = async (fn) => {
 
 const ZWSP = "\u200B"; // 제로폭 공백(실제 문자)
 const NBSP = "\u00A0"; // NBSP(실제 문자)
+
+function setPdPrice(targetSku, todayKey, price) {
+  const safePrice = Number(price);
+  if (!Number.isFinite(safePrice) || safePrice < 0) return;
+
+  if (!targetSku.pd || typeof targetSku.pd !== "object") {
+    targetSku.pd = {};
+  }
+
+  targetSku.pd[todayKey] = { s: safePrice };
+
+  console.log("targetSku.pd[todayKey]", targetSku.pd);
+  console.log("targetSku.pd[todayKey]", todayKey);
+  console.log("targetSku.pd[todayKey]", safePrice);
+
+  const istargetSku = targetSku.pd[todayKey] ? true : false;
+
+  return istargetSku;
+}
 
 function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // 특수문자 리터럴화
@@ -525,8 +482,6 @@ const norm = (v) =>
 (async () => {
   await dbConnect();
 
-  // 정확히 4등분하기
-
   const divided = [
     // ------------------------- 여성 의류 -----------------------------
 
@@ -924,53 +879,27 @@ const norm = (v) =>
     },
   ];
 
-  // const chunkSize = Math.ceil(categoryList.length / 4);
-  // const divided = [];
-
-  // for (let i = 0; i < 4; i++) {
-  //   divided.push(categoryList.slice(i * chunkSize, (i + 1) * chunkSize));
-  // }
-
-  //  divided.length 6개
-
   const categoryItem = divided[0];
+
   const cnfields = ["c2n", "c3n", "c4n"];
+  //
 
   const listTasks = { item: [], dataBaseRes: [] };
 
-  // )
+  // -------------------------------------------------------------------- 카테고리 전체 ----------------------------------------------------------
 
-  const c1nItem = await fetchByCategory({
-    categoryId: categoryItem.cId,
-  });
+  // const c1nItem = await fetchByCategory({
+  //   categoryId: categoryItem.cId,
+  // });
 
-  console.log("c1nitem", c1nItem.items.length);
+  // console.log("c1nitem", c1nItem.items.length);
 
-  listTasks.item.push(...c1nItem.items);
+  // listTasks.item.push(...c1nItem.items);
 
   const categoryRes = categoryItem.categorieList
     // .slice(Math.round(divided[10].length / 2), Math.round(divided[10].length))
     .map((item) =>
       limit(async () => {
-        // const cat = await ProductCategories.findOne({
-        //   cId: String(item.cId),
-        // });
-
-        // if (!cat?._id) {
-        //   console.log("카테고리 없음:", item.cId);
-        //   return;
-        // }
-
-        // let c1nProduct = [];
-
-        // c1nProduct = await ProductDetail.find({ c1n: categoryItem.cn })
-        //   .populate("cId1", "cId cn")
-        //   .populate("cId2", "cId cn")
-        //   .select("_id vol")
-        //   .lean();
-
-        // listTasks.dataBaseRes.push(...c1nProduct);
-
         let res = [];
 
         for (const field of cnfields) {
@@ -1009,13 +938,13 @@ const norm = (v) =>
   // 단일 데이터베이스 요청
 
   // const categoryRes = async () => {
-  //   let res = await ProductDetail.find({ _id: "1005008152051252" })
+  //   let res = await ProductDetail.find({ _id: "1005010764066001" })
   //     .populate("cId1", "cId cn")
   //     .populate("cId2", "cId cn")
   //     .lean({ virtuals: true });
 
   //   // listTasks.item.push(...items);
-  //   listTasks.dataBaseRes.push({ _id: "1005008152051252" });
+  //   listTasks.dataBaseRes.push({ _id: "1005010764066001" });
   //   listTasks.dataBaseRes.push(...res);
   // };
 
@@ -1333,59 +1262,32 @@ const norm = (v) =>
           const lowPriceUpdSkus = [];
 
           for (const item1 of skuList) {
-            // const sid = String(item1?.sku_id);
-            // if (sid == null) continue;
-
-            // if (!existingIds.has(sid)) {
-            //   newSkus.push(item1);
-            //   continue;
-            // }
             const key1 = toKey1(item1?.color, item1?.sku_properties);
-            const exist1 = skuMap1.get(key1);
-            // console.log("exist1:", exist1);
+            let matchedSku = skuMap1.get(key1);
 
-            if (!exist1) {
+            if (!matchedSku) {
               const key2 = toKey2(item1?.color, item1?.sku_properties);
-              const exist2 = skuMap2.get(key2);
-
-              if (!exist2) {
-                newSkus.push(item1);
-                continue;
-              }
-              // if (!exist2) {
-              //   const key3 = toKey3(sid, item1?.sku_properties);
-              //   const exist3 = skuMap3.get(key3);
-              //   if (!exist3) {
-              //     const key4 = toKey4(sid, item1?.sku_properties);
-              //     const exist4 = skuMap4.get(key4);
-              //     if (!exist4) {
-              //       newSkus.push(item1);
-              //       continue;
-              //     }
-              //   }
+              matchedSku = skuMap2.get(key2);
             }
 
-            // 문제 지점 전후로 세분화 try-catch
-            // let incomingSale;
-            // try {
-            //   incomingSale = toNum(item1?.sale_price_with_tax ?? null);
-            //   // incomingSale = toNum(1 ?? null);
-            // } catch (e) {
-            //   throw e;
-            // }
-            let docToday, docSale;
-            try {
-              docToday = exist1?.pd?.[todayKey];
-              docSale = toNum(docToday?.s);
-            } catch (e) {
-              throw e;
+            if (!matchedSku) {
+              newSkus.push(item1);
+              continue;
             }
+
+            const docToday = matchedSku?.pd?.[todayKey];
+            const docSale = toNum(docToday?.s);
+            const incomingSale = toNum(
+              item1?.sale_price_with_tax ?? item1?.sale_price,
+            );
 
             if (docToday) {
               lowPriceUpdSkus.push(item1);
             } else {
               updSkus.push(item1);
             }
+
+            setPdPrice(matchedSku, todayKey, incomingSale);
           }
 
           // 5) bulkWrite 준비
@@ -1521,40 +1423,33 @@ const norm = (v) =>
           }
 
           // 5-4) 새로 발견된 sku들을 push
-          if (newSkus.length > 0 && doc) {
-            const toPush = newSkus.map((s) => {
-              const spKey = normalizeSpForCompare(s.sku_properties);
-              const cNorm = normalizeCForCompare(s.color);
-              const spCanon = canonSkuProps(s.sku_properties);
-
-              console.log("새로운 업데이트");
-
-              return {
-                // sId: String(s?.sku_id),
-                c: cNorm ?? "",
-                link: s.link,
-                sp: spCanon ?? "",
-                spKey: spKey ?? "",
-                cur: s.currency ?? "KRW",
-                pd: {
-                  [todayKey]: {
-                    s: s.sale_price_with_tax,
-                  },
-                },
-              };
-            });
-
-            ops.push({
-              updateOne: {
-                filter: { _id: productId }, // ✅ 저장 키 사용
-                update: {
-                  $push: { "sku_info.sil": { $each: toPush } },
+          if (newSkus.length > 0) {
+            const toPushLocal = newSkus.map((s) => ({
+              c: normalizeCForCompare(s.color) ?? "",
+              link: s.link,
+              sp: canonSkuProps(s.sku_properties) ?? "",
+              spKey: normalizeSpForCompare(s.sku_properties) ?? "",
+              cur: s.currency ?? "KRW",
+              pd: {
+                [todayKey]: {
+                  s: Number(s.sale_price_with_tax ?? s.sale_price),
                 },
               },
-            });
+            }));
+
+            if (!doc.sku_info) doc.sku_info = {};
+            if (!Array.isArray(doc.sku_info.sil)) doc.sku_info.sil = [];
+
+            doc.sku_info.sil.push(...toPushLocal);
           }
 
           // 6) 일괄 실행
+          const { min_price, max_price, discount_rate } =
+            computePriceFields(doc);
+          baseDoc.min_p = min_price;
+          baseDoc.max_p = max_price;
+          baseDoc.dr = discount_rate;
+
           if (ops.length) {
             await ProductDetail.bulkWrite(ops, {
               ordered: false,

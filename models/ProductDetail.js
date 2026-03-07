@@ -26,7 +26,7 @@ const _normSp = (spStr) => {
       }
       // 키 정렬
       return Object.fromEntries(
-        Object.entries(out).sort(([a], [b]) => (a > b ? 1 : -1))
+        Object.entries(out).sort(([a], [b]) => (a > b ? 1 : -1)),
       );
     });
     return _strip(JSON.stringify(mapped));
@@ -55,7 +55,7 @@ const PricePointSchema = new mongoose.Schema(
     //   alias: "collected_at",
     // },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ const SkuInfoItemSchema = new mongoose.Schema(
     _id: false,
     toJSON: { virtuals: true }, // JSON 변환 시 alias 노출
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ const SkuInfoSchema = new mongoose.Schema(
       // },
     },
   },
-  { _id: false, toJSON: { virtuals: true }, toObject: { virtuals: true } }
+  { _id: false, toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );
 // normalizeCForCompare;
 // normalizeSpForCompare;
@@ -181,6 +181,29 @@ const ProductDetailSchema = new mongoose.Schema(
       min: 0,
     },
 
+    min_p: {
+      type: mongoose.Schema.Types.Int32,
+      alias: "min_price",
+      set: toNumber,
+      min: 0,
+      index: true,
+    },
+
+    max_p: {
+      type: mongoose.Schema.Types.Int32,
+      alias: "min_price",
+      set: toNumber,
+      min: 0,
+      index: true,
+    },
+
+    // (avg - latest) / avg * 100
+    dr: {
+      alias: "discount_rate",
+      type: Number,
+      index: true,
+    },
+
     il: { type: String, required: true, alias: "image_link" },
     ail: { type: [String], default: [], alias: "additional_image_links" },
 
@@ -193,7 +216,7 @@ const ProductDetailSchema = new mongoose.Schema(
     id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

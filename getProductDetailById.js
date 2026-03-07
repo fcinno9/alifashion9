@@ -12,7 +12,7 @@ const TRACKING_ID = process.env.AE_TRACKING_ID;
 
 if (!APP_KEY || !APP_SECRET || !TRACKING_ID) {
   console.error(
-    "환경변수(AE_APP_KEY, AE_APP_SECRET, AE_TRACKING_ID)를 확인하세요."
+    "환경변수(AE_APP_KEY, AE_APP_SECRET, AE_TRACKING_ID)를 확인하세요.",
   );
   process.exit(1);
 }
@@ -54,7 +54,7 @@ async function callAliExpress(method, bizParams) {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
-      `HTTP ${res.status} ${res.statusText} :: ${text.slice(0, 500)}`
+      `HTTP ${res.status} ${res.statusText} :: ${text.slice(0, 500)}`,
     );
   }
 
@@ -106,7 +106,7 @@ export async function getProductDetailsById(
     tracking_id = TRACKING_ID,
     fields = "commission_rate,sale_price,original_price,product_title,product_main_image_url,product_detail_url,evaluate_rate,volume",
     app_signature,
-  } = {}
+  } = {},
 ) {
   const ids = Array.isArray(productIds)
     ? productIds.join(",")
@@ -125,8 +125,8 @@ export async function getProductDetailsById(
   const raw = await callAliExpress(METHOD_DETAIL, bizParams);
   const items = normalizeDetailResponse(raw);
 
-  // console.log("raw:", raw);
-  // console.log("items:", items);
+  console.log("raw:", raw);
+  console.log("items:", items);
 
   return { raw, items };
 }
@@ -140,7 +140,7 @@ if (isDirect) {
   (async () => {
     // CLI 인자에서 상품ID 받기: node fetchByProductId.js 1005007856343236 4000669887458
     // const cliIds = process.argv.slice(2);
-    const ids = ["1005010298014041"]; // 없으면 예시 값
+    const ids = ["1005006492817872"]; // 없으면 예시 값
 
     const product = await getProductDetailsById(ids, {
       country: "KR",
